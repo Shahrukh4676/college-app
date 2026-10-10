@@ -7,27 +7,30 @@ import {
   TextInput,
   Pressable,
   RefreshControl,
+  ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { Palette, Radius, Shadows, Spacing } from '@/theme';
+import { Palette, Radius, Shadows, Spacing, Typography } from '@/theme';
+import { useResponsive } from '@/hooks/useResponsive';
 import { taskService } from '@/services/taskService';
 import { TaskCard } from '@/components/tasks/task-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorView } from '@/components/ui/error-view';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Ionicons } from '@expo/vector-icons';
 import { TaskCategory } from '@/types';
 
-const CATEGORIES: { label: string; key: 'ALL' | TaskCategory }[] = [
-  { label: 'All', key: 'ALL' },
-  { label: 'Coding', key: 'CODING_DEBUG' },
-  { label: 'Math & Stats', key: 'MATH_STATS' },
-  { label: 'Research', key: 'RESEARCH_EDITING' },
-  { label: 'Notes', key: 'NOTES_SUMMARY' },
-  { label: 'Slides', key: 'PRESENTATIONS' },
-  { label: 'Tutoring', key: 'TUTORING' },
+const CATEGORIES: { label: string; key: 'ALL' | TaskCategory; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { label: 'All Domains', key: 'ALL', icon: 'grid-outline' },
+  { label: 'Coding & Debugging', key: 'CODING_DEBUG', icon: 'code-slash' },
+  { label: 'Math & Statistics', key: 'MATH_STATS', icon: 'calculator' },
+  { label: 'Research & Editing', key: 'RESEARCH_EDITING', icon: 'document-text' },
+  { label: 'Notes & Summary', key: 'NOTES_SUMMARY', icon: 'book' },
+  { label: 'Presentations', key: 'PRESENTATIONS', icon: 'easel' },
+  { label: 'Tutoring & Concepts', key: 'TUTORING', icon: 'school' },
 ];
 
 const STATUS_FILTERS = [
@@ -41,6 +44,7 @@ export default function TasksScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ category?: string }>();
+  const { isMobile } = useResponsive();
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | TaskCategory>(
@@ -64,145 +68,263 @@ export default function TasksScreen() {
       }),
   });
 
+  const isFiltered = search.length > 0 || selectedCategory !== 'ALL' || selectedStatus !== 'ALL';
+
+  const resetFilters = () => {
+    setSearch('');
+    setSelectedCategory('ALL');
+    setSelectedStatus('ALL');
+  };
+
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 16) }]}>
-      {/* Search & Header */}
-      <View style={styles.headerArea}>
-        <View style={styles.titleRow}>
-          <Text style={styles.screenTitle}>Marketplace</Text>
-          <Pressable
-            onPress={() => router.push('/task/create')}
-            accessibilityRole="button"
-            accessibilityLabel="Create task"
-            style={({ pressed }) => [styles.createIconBtn, pressed && styles.btnPressed]}
-          >
-            <Ionicons name="add" size={22} color={Palette.white} />
-          </Pressable>
-        </View>
-
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={18} color={Palette.slate400} />
-          <TextInput
-            placeholder="Search tasks by title, skill, or topic..."
-            placeholderTextColor={Palette.slate400}
-            value={search}
-            onChangeText={setSearch}
-            style={styles.searchInput}
-          />
-          {search.length > 0 && (
-            <Pressable onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={Palette.slate400} />
+    <View style={styles.container}>
+      {/* Mobile Top Header */}
+      {isMobile && (
+        <View style={[styles.mobileHeader, { paddingTop: Math.max(insets.top, 16) }]}>
+          <View style={styles.mobileTitleRow}>
+            <Text style={styles.mobileTitle}>Marketplace</Text>
+            <Pressable
+              onPress={() => router.push('/task/create')}
+              accessibilityRole="button"
+              accessibilityLabel="Create task"
+              style={styles.mobileCreateBtn}
+            >
+              <Ionicons name="add" size={20} color={Palette.white} />
             </Pressable>
-          )}
-        </View>
+          </View>
 
-        {/* Category Pills */}
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={CATEGORIES}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.categoryList}
-          renderItem={({ item }) => {
-            const isSelected = selectedCategory === item.key;
-            return (
-              <Pressable
-                onPress={() => setSelectedCategory(item.key)}
-                style={[styles.categoryPill, isSelected && styles.categoryPillActive]}
-              >
-                <Text
-                  style={[styles.categoryText, isSelected && styles.categoryTextActive]}
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={18} color={Palette.slate400} />
+            <TextInput
+              placeholder="Search tasks, skills, topics..."
+              placeholderTextColor={Palette.slate400}
+              value={search}
+              onChangeText={setSearch}
+              style={styles.searchInput}
+            />
+            {search.length > 0 && (
+              <Pressable onPress={() => setSearch('')}>
+                <Ionicons name="close-circle" size={18} color={Palette.slate400} />
+              </Pressable>
+            )}
+          </View>
+
+          {/* Mobile Category & Status Pills */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalPillsRow}
+          >
+            {CATEGORIES.map((cat) => {
+              const active = selectedCategory === cat.key;
+              return (
+                <Pressable
+                  key={cat.key}
+                  onPress={() => setSelectedCategory(cat.key)}
+                  style={[styles.categoryPill, active && styles.categoryPillActive]}
                 >
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          }}
-        />
+                  <Text style={[styles.categoryPillText, active && styles.categoryPillTextActive]}>
+                    {cat.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
 
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={STATUS_FILTERS}
-          keyExtractor={(item) => item.value}
-          contentContainerStyle={[styles.categoryList, { marginTop: 6 }]}
-          renderItem={({ item }) => {
-            const isSelected = selectedStatus === item.value;
-            return (
-              <Pressable
-                onPress={() => setSelectedStatus(item.value)}
-                style={[styles.statusPill, isSelected && styles.statusPillActive]}
-              >
-                <Text style={[styles.statusPillText, isSelected && styles.statusPillTextActive]}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          }}
-        />
-      </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.horizontalPillsRow, { marginTop: 6, paddingBottom: 6 }]}
+          >
+            {STATUS_FILTERS.map((item) => {
+              const active = selectedStatus === item.value;
+              return (
+                <Pressable
+                  key={item.value}
+                  onPress={() => setSelectedStatus(item.value)}
+                  style={[styles.statusPill, active && styles.statusPillActive]}
+                >
+                  <Text style={[styles.statusPillText, active && styles.statusPillTextActive]}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
-      {/* Task List Content */}
-      <FlatList
-        data={tasks || []}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TaskCard task={item} />}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={Palette.primary600}
-          />
-        }
-        ListEmptyComponent={
-          isError ? (
-            <ErrorView
-              title="Unable to Load Marketplace"
-              message="Failed to connect to the task service. Please check your network or server status."
-              onRetry={() => refetch()}
-              isRetrying={isRefetching}
-            />
-          ) : isLoading ? (
-            <View style={styles.skeletonList}>
-              <Skeleton height={140} borderRadius={Radius.lg} style={styles.skeletonItem} />
-              <Skeleton height={140} borderRadius={Radius.lg} style={styles.skeletonItem} />
-              <Skeleton height={140} borderRadius={Radius.lg} style={styles.skeletonItem} />
+      {/* Main Content Area */}
+      <ResponsiveContainer maxWidth="content" style={{ flex: 1 }}>
+        <View style={[styles.bodyLayout, !isMobile && styles.desktopBodyLayout]}>
+          {/* Desktop Filter Sidebar */}
+          {!isMobile && (
+            <View style={styles.desktopSidebar}>
+              <View style={styles.sidebarCard}>
+                <Text style={styles.sidebarHeading}>Filter by Domain</Text>
+                <View style={styles.sidebarList}>
+                  {CATEGORIES.map((cat) => {
+                    const active = selectedCategory === cat.key;
+                    return (
+                      <Pressable
+                        key={cat.key}
+                        onPress={() => setSelectedCategory(cat.key)}
+                        style={[styles.sidebarItem, active && styles.sidebarItemActive]}
+                      >
+                        <Ionicons
+                          name={cat.icon}
+                          size={16}
+                          color={active ? Palette.primary600 : Palette.slate500}
+                        />
+                        <Text style={[styles.sidebarItemText, active && styles.sidebarItemTextActive]}>
+                          {cat.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <View style={styles.sidebarDivider} />
+
+                <Text style={styles.sidebarHeading}>Task Status</Text>
+                <View style={styles.sidebarList}>
+                  {STATUS_FILTERS.map((item) => {
+                    const active = selectedStatus === item.value;
+                    return (
+                      <Pressable
+                        key={item.value}
+                        onPress={() => setSelectedStatus(item.value)}
+                        style={[styles.sidebarItem, active && styles.sidebarItemActive]}
+                      >
+                        <View style={[styles.statusIndicatorDot, active && styles.statusDotActive]} />
+                        <Text style={[styles.sidebarItemText, active && styles.sidebarItemTextActive]}>
+                          {item.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {isFiltered && (
+                  <Pressable onPress={resetFilters} style={styles.resetFilterBtn}>
+                    <Ionicons name="refresh-outline" size={14} color={Palette.primary600} />
+                    <Text style={styles.resetFilterText}>Reset Filters</Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
-          ) : search || selectedCategory !== 'ALL' || selectedStatus !== 'ALL' ? (
-            <EmptyState
-              icon="search-outline"
-              title="No Matching Tasks"
-              description="No tasks match your active filters. Clear filters to view all available tasks."
-              actionTitle="Reset All Filters"
-              onActionPress={() => {
-                setSearch('');
-                setSelectedCategory('ALL');
-                setSelectedStatus('ALL');
-              }}
-            />
-          ) : (
-            <EmptyState
-              icon="file-tray-outline"
-              title="No Tasks Available"
-              description="There are currently no tasks posted in the marketplace. Be the first to post a request!"
-              actionTitle="Post a New Task"
-              onActionPress={() => router.push('/task/create')}
-            />
-          )
-        }
-      />
+          )}
 
-      {/* Floating Action Button (FAB) */}
-      <Pressable
-        onPress={() => router.push('/task/create')}
-        accessibilityRole="button"
-        accessibilityLabel="Create Task FAB"
-        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-      >
-        <Ionicons name="add" size={28} color={Palette.white} />
-      </Pressable>
+          {/* Task Feed */}
+          <View style={styles.feedColumn}>
+            {/* Desktop Search & Header Bar */}
+            {!isMobile && (
+              <View style={styles.desktopHeaderRow}>
+                <View style={styles.desktopSearchBox}>
+                  <Ionicons name="search" size={18} color={Palette.slate400} />
+                  <TextInput
+                    placeholder="Search tasks by title, skill keywords, or topics..."
+                    placeholderTextColor={Palette.slate400}
+                    value={search}
+                    onChangeText={setSearch}
+                    style={styles.desktopSearchInput}
+                  />
+                  {search.length > 0 && (
+                    <Pressable onPress={() => setSearch('')}>
+                      <Ionicons name="close-circle" size={18} color={Palette.slate400} />
+                    </Pressable>
+                  )}
+                </View>
+
+                <Pressable
+                  onPress={() => router.push('/task/create')}
+                  style={styles.desktopCreateBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Create task"
+                >
+                  <Ionicons name="add" size={18} color={Palette.white} />
+                  <Text style={styles.desktopCreateBtnText}>Post Request</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Results Counter */}
+            {tasks && tasks.length > 0 && (
+              <View style={styles.resultsBar}>
+                <Text style={styles.resultsCountText}>
+                  Showing <Text style={styles.resultsCountBold}>{tasks.length}</Text> academic tasks
+                </Text>
+              </View>
+            )}
+
+            <FlatList
+              data={tasks || []}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={!isMobile ? styles.desktopTaskGridWrapper : undefined}>
+                  <TaskCard task={item} />
+                </View>
+              )}
+              numColumns={!isMobile ? 2 : 1}
+              key={!isMobile ? 'desktop-grid' : 'mobile-list'}
+              columnWrapperStyle={!isMobile ? styles.columnWrapper : undefined}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefetching}
+                  onRefresh={refetch}
+                  tintColor={Palette.primary600}
+                />
+              }
+              ListEmptyComponent={
+                isError ? (
+                  <ErrorView
+                    title="Unable to Load Marketplace"
+                    message="Failed to connect to the task service. Please verify your connection."
+                    onRetry={() => refetch()}
+                    isRetrying={isRefetching}
+                  />
+                ) : isLoading ? (
+                  <View style={styles.skeletonList}>
+                    <Skeleton height={140} borderRadius={Radius.lg} style={styles.skeletonItem} />
+                    <Skeleton height={140} borderRadius={Radius.lg} style={styles.skeletonItem} />
+                    <Skeleton height={140} borderRadius={Radius.lg} style={styles.skeletonItem} />
+                  </View>
+                ) : isFiltered ? (
+                  <EmptyState
+                    icon="search-outline"
+                    title="No Matching Tasks"
+                    description="No tasks match your active filters. Clear your filters to view all campus opportunities."
+                    actionTitle="Reset All Filters"
+                    onActionPress={resetFilters}
+                  />
+                ) : (
+                  <EmptyState
+                    icon="file-tray-outline"
+                    title="No Tasks Available"
+                    description="There are currently no tasks posted in the marketplace. Be the first to post a request!"
+                    actionTitle="Post a New Task"
+                    onActionPress={() => router.push('/task/create')}
+                  />
+                )
+              }
+            />
+          </View>
+        </View>
+      </ResponsiveContainer>
+
+      {/* Floating Action Button (Mobile Only) */}
+      {isMobile && (
+        <Pressable
+          onPress={() => router.push('/task/create')}
+          accessibilityRole="button"
+          accessibilityLabel="Create Task FAB"
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        >
+          <Ionicons name="add" size={28} color={Palette.white} />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -212,35 +334,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Palette.slate50,
   },
-  headerArea: {
+  mobileHeader: {
     backgroundColor: Palette.white,
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: Palette.slate200,
   },
-  titleRow: {
+  mobileTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.md,
   },
-  screenTitle: {
-    fontSize: 24,
-    fontWeight: '800',
+  mobileTitle: {
+    ...Typography.h2,
     color: Palette.slate900,
-    letterSpacing: -0.4,
   },
-  createIconBtn: {
+  mobileCreateBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: Radius.md,
     backgroundColor: Palette.primary600,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  btnPressed: {
-    opacity: 0.85,
   },
   searchBox: {
     flexDirection: 'row',
@@ -257,13 +374,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Palette.slate900,
   },
-  categoryList: {
+  horizontalPillsRow: {
     gap: Spacing.xs,
-    paddingBottom: 4,
   },
   categoryPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: Radius.full,
     backgroundColor: Palette.slate100,
     marginRight: 6,
@@ -271,28 +387,17 @@ const styles = StyleSheet.create({
   categoryPillActive: {
     backgroundColor: Palette.primary600,
   },
-  categoryText: {
+  categoryPillText: {
     fontSize: 12,
     fontWeight: '600',
     color: Palette.slate600,
   },
-  categoryTextActive: {
+  categoryPillTextActive: {
     color: Palette.white,
   },
-  listContent: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.xxxl,
-  },
-  skeletonList: {
-    paddingTop: Spacing.sm,
-  },
-  skeletonItem: {
-    marginBottom: Spacing.md,
-  },
   statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: Radius.sm,
     backgroundColor: Palette.slate100,
     marginRight: 6,
@@ -307,6 +412,155 @@ const styles = StyleSheet.create({
   },
   statusPillTextActive: {
     color: Palette.white,
+  },
+  bodyLayout: {
+    flex: 1,
+  },
+  desktopBodyLayout: {
+    flexDirection: 'row',
+    paddingTop: Spacing.xl,
+    gap: Spacing.xxl,
+  },
+  desktopSidebar: {
+    width: 250,
+  },
+  sidebarCard: {
+    backgroundColor: Palette.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    ...Shadows.sm,
+  },
+  sidebarHeading: {
+    ...Typography.tiny,
+    fontWeight: '700',
+    color: Palette.slate500,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+  },
+  sidebarList: {
+    gap: 4,
+    marginBottom: Spacing.md,
+  },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: Radius.md,
+  },
+  sidebarItemActive: {
+    backgroundColor: Palette.primary50,
+  },
+  sidebarItemText: {
+    ...Typography.caption,
+    color: Palette.slate700,
+    fontWeight: '500',
+  },
+  sidebarItemTextActive: {
+    color: Palette.primary700,
+    fontWeight: '700',
+  },
+  statusIndicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Palette.slate300,
+  },
+  statusDotActive: {
+    backgroundColor: Palette.primary600,
+  },
+  sidebarDivider: {
+    height: 1,
+    backgroundColor: Palette.slate100,
+    marginVertical: Spacing.md,
+  },
+  resetFilterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: Radius.md,
+    backgroundColor: Palette.primary50,
+    marginTop: Spacing.xs,
+  },
+  resetFilterText: {
+    ...Typography.tiny,
+    color: Palette.primary700,
+    fontWeight: '700',
+  },
+  feedColumn: {
+    flex: 1,
+  },
+  desktopHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  desktopSearchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Palette.white,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    gap: Spacing.sm,
+    ...Shadows.sm,
+  },
+  desktopSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Palette.slate900,
+  },
+  desktopCreateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Palette.primary600,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: Radius.lg,
+    ...Shadows.sm,
+  },
+  desktopCreateBtnText: {
+    color: Palette.white,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  resultsBar: {
+    marginBottom: Spacing.md,
+  },
+  resultsCountText: {
+    ...Typography.caption,
+    color: Palette.slate500,
+  },
+  resultsCountBold: {
+    fontWeight: '700',
+    color: Palette.slate800,
+  },
+  columnWrapper: {
+    gap: Spacing.lg,
+  },
+  desktopTaskGridWrapper: {
+    flex: 1,
+    marginBottom: Spacing.md,
+  },
+  listContent: {
+    paddingBottom: Spacing.xxxl * 2,
+  },
+  skeletonList: {
+    gap: Spacing.md,
+  },
+  skeletonItem: {
+    width: '100%',
   },
   fab: {
     position: 'absolute',

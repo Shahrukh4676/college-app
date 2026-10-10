@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
-import { Palette, Radius, Spacing } from '@/theme';
+import { Palette, Radius, Spacing, Typography, Shadows, Layout } from '@/theme';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -25,7 +25,7 @@ const loginSchema = z.object({
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { login, isMockMode } = useAuth();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -72,100 +72,95 @@ export default function LoginScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={Palette.slate800} />
-        </Pressable>
+        <View style={styles.cardContainer}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={22} color={Palette.slate800} />
+          </Pressable>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>
-            Sign in to continue connecting with peers and managing tasks.
-          </Text>
-          {__DEV__ && isMockMode && (
-            <Pressable
-              onPress={() => {
-                setEmail('aarav.sharma@campus.edu');
-                setPassword('password123');
-              }}
-              style={styles.mockBanner}
-            >
-              <Ionicons name="sparkles" size={16} color={Palette.primary600} />
-              <Text style={styles.mockBannerText}>
-                Dev Mode: Tap here to fill demo test credentials
-              </Text>
-            </Pressable>
-          )}
-        </View>
-
-        {apiError && (
-          <View style={styles.errorBox}>
-            <Ionicons name="alert-circle" size={18} color={Palette.danger500} />
-            <Text style={styles.errorBoxText}>{apiError}</Text>
+          <View style={styles.brandRow}>
+            <View style={styles.logoBadge}>
+              <Ionicons name="school" size={20} color={Palette.white} />
+            </View>
+            <Text style={styles.brandName}>Student Marketplace</Text>
           </View>
-        )}
 
-        <View style={styles.form}>
-          <Input
-            label="College / Academic Email"
-            placeholder="e.g. name@college.edu"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            error={errors.email}
-            leftIcon={<Ionicons name="mail-outline" size={20} color={Palette.slate400} />}
-          />
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>
+              Sign in to manage tasks, collaborate with campus peers, and view milestone payments.
+            </Text>
+          </View>
 
-          <Input
-            label="Password"
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-            }}
-            secureTextEntry
-            error={errors.password}
-            leftIcon={<Ionicons name="lock-closed-outline" size={20} color={Palette.slate400} />}
-          />
+          {apiError && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle" size={18} color={Palette.danger500} />
+              <Text style={styles.errorBoxText}>{apiError}</Text>
+            </View>
+          )}
 
-          <Pressable
-            onPress={() => router.push('/(auth)/forgot-password')}
-            style={styles.forgotPasswordPress}
-            accessibilityRole="button"
-            accessibilityLabel="Forgot password"
-          >
-            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-          </Pressable>
+          <View style={styles.form}>
+            <Input
+              label="College / Academic Email"
+              placeholder="e.g. name@college.edu"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              error={errors.email}
+              leftIcon={<Ionicons name="mail-outline" size={20} color={Palette.slate400} />}
+            />
 
-          <Button
-            title="Sign In"
-            onPress={handleLogin}
-            variant="primary"
-            size="lg"
-            isLoading={isLoading}
-            style={styles.submitBtn}
-          />
-        </View>
+            <Input
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+              }}
+              secureTextEntry
+              error={errors.password}
+              leftIcon={<Ionicons name="lock-closed-outline" size={20} color={Palette.slate400} />}
+            />
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don&apos;t have an account yet? </Text>
-          <Pressable
-            onPress={() => router.push('/(auth)/register')}
-            accessibilityRole="button"
-            accessibilityLabel="Register now"
-          >
-            <Text style={styles.registerLink}>Register</Text>
-          </Pressable>
+            <Pressable
+              onPress={() => router.push('/(auth)/forgot-password')}
+              style={styles.forgotPasswordPress}
+              accessibilityRole="button"
+              accessibilityLabel="Forgot password"
+            >
+              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+            </Pressable>
+
+            <Button
+              title="Sign In"
+              onPress={handleLogin}
+              variant="primary"
+              size="lg"
+              isLoading={isLoading}
+              style={styles.submitBtn}
+            />
+          </View>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>New to Student Marketplace? </Text>
+            <Pressable
+              onPress={() => router.push('/(auth)/register')}
+              accessibilityRole="button"
+              accessibilityLabel="Create account"
+            >
+              <Text style={styles.footerLink}>Register here</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -175,92 +170,114 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
-    backgroundColor: Palette.white,
+    backgroundColor: Palette.slate50,
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: Layout.maxAuthWidth,
+    backgroundColor: Palette.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    ...Shadows.md,
   },
   backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Palette.slate100,
+    marginBottom: Spacing.md,
     alignSelf: 'flex-start',
-    padding: 6,
-    borderRadius: Radius.sm,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: Spacing.lg,
+  },
+  logoBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.sm,
+    backgroundColor: Palette.primary600,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandName: {
+    ...Typography.bodyBold,
+    color: Palette.navy950,
   },
   header: {
     marginBottom: Spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    ...Typography.h2,
     color: Palette.slate900,
-    letterSpacing: -0.5,
-    marginBottom: Spacing.xs,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 15,
+    ...Typography.body,
+    fontSize: 14,
     color: Palette.slate600,
-    lineHeight: 22,
-  },
-  mockBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: Palette.primary50,
-    padding: 10,
-    borderRadius: Radius.md,
-    marginTop: Spacing.md,
-  },
-  mockBannerText: {
-    fontSize: 12,
-    color: Palette.primary700,
-    fontWeight: '600',
-    flex: 1,
+    lineHeight: 20,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     backgroundColor: Palette.danger50,
-    padding: 12,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Palette.danger100,
+    borderColor: Palette.danger500,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
   },
   errorBoxText: {
-    fontSize: 13,
+    ...Typography.caption,
     color: Palette.danger700,
     flex: 1,
   },
   form: {
-    marginBottom: Spacing.xl,
+    gap: Spacing.md,
   },
   forgotPasswordPress: {
     alignSelf: 'flex-end',
-    marginBottom: Spacing.lg,
+    paddingVertical: 2,
   },
   forgotPasswordText: {
-    fontSize: 13,
+    ...Typography.caption,
     color: Palette.primary600,
     fontWeight: '600',
   },
   submitBtn: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: Spacing.xxl,
+    paddingTop: Spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Palette.slate100,
   },
   footerText: {
+    ...Typography.body,
     fontSize: 14,
     color: Palette.slate600,
   },
-  registerLink: {
+  footerLink: {
+    ...Typography.bodyBold,
     fontSize: 14,
-    fontWeight: '700',
     color: Palette.primary600,
   },
 });

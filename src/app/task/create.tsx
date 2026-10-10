@@ -13,11 +13,12 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { Palette, Radius, Spacing } from '@/theme';
+import { Palette, Radius, Spacing, Typography, Shadows } from '@/theme';
 import { taskService } from '@/services/taskService';
 import { AppHeader } from '@/components/ui/app-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { TaskCategory } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -143,147 +144,157 @@ export default function CreateTaskScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
-      <AppHeader title="Post a New Task" canGoBack onBackPress={handleBack} />
+      <AppHeader title="Request Academic Assistance" canGoBack onBackPress={handleBack} />
 
-      <ScrollView
+      <ResponsiveContainer
+        maxWidth="form"
+        asScrollView
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + Spacing.xxxl },
         ]}
-        keyboardShouldPersistTaps="handled"
       >
-        <Input
-          label="Task Title"
-          placeholder="e.g. Red-Black Tree rotation debugging in C++"
-          value={title}
-          onChangeText={(t) => {
-            setTitle(t);
-            if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
-          }}
-          error={errors.title}
-        />
+        <View style={styles.formCard}>
+          <View style={styles.headerBox}>
+            <Text style={styles.formTitle}>Task Specifications</Text>
+            <Text style={styles.formSubtitle}>
+              Provide detailed expectations so qualified peers can assess your task and submit accurate proposals.
+            </Text>
+          </View>
 
-        {/* Category Picker */}
-        <View style={styles.fieldSection}>
-          <Text style={styles.fieldLabel}>Category</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
-            {CATEGORIES.map((cat) => {
-              const active = category === cat.value;
-              return (
-                <Pressable
-                  key={cat.value}
-                  onPress={() => setCategory(cat.value)}
-                  style={[styles.catOption, active && styles.catOptionActive]}
-                >
-                  <Text style={[styles.catOptionText, active && styles.catOptionTextActive]}>
-                    {cat.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
+          <Input
+            label="Task Title"
+            placeholder="e.g. Red-Black Tree rotation debugging in C++"
+            value={title}
+            onChangeText={(t) => {
+              setTitle(t);
+              if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
+            }}
+            error={errors.title}
+          />
 
-        <Input
-          label="Detailed Description & Scope"
-          placeholder="Describe exactly what needs to be solved, what you've tried, and expected deliverables..."
-          value={description}
-          onChangeText={(t) => {
-            setDescription(t);
-            if (errors.description) setErrors((prev) => ({ ...prev, description: '' }));
-          }}
-          multiline
-          numberOfLines={5}
-          style={styles.descInput}
-          error={errors.description}
-        />
-
-        {/* Budget */}
-        <Input
-          label="Budget Offering (INR)"
-          placeholder="e.g. 800"
-          value={budget}
-          onChangeText={(t) => {
-            setBudget(t);
-            if (errors.budgetInr) setErrors((prev) => ({ ...prev, budgetInr: '' }));
-          }}
-          keyboardType="numeric"
-          leftIcon={<Text style={styles.currencyPrefix}>₹</Text>}
-          error={errors.budgetInr}
-          helperText="Funds are protected in escrow until you approve the delivered work."
-        />
-
-        {/* Deadline Preset */}
-        <View style={styles.fieldSection}>
-          <Text style={styles.fieldLabel}>Completion Deadline</Text>
-          <View style={styles.presetRow}>
-            {DEADLINE_PRESETS.map((preset) => {
-              const isSelected = selectedPresetHours === preset.hours;
-              return (
-                <Pressable
-                  key={preset.hours}
-                  onPress={() => setSelectedPresetHours(preset.hours)}
-                  style={[styles.presetBtn, isSelected && styles.presetBtnActive]}
-                >
-                  <Text
-                    style={[
-                      styles.presetText,
-                      isSelected && styles.presetTextActive,
-                    ]}
+          {/* Category Picker */}
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Academic Domain</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+              {CATEGORIES.map((cat) => {
+                const active = category === cat.value;
+                return (
+                  <Pressable
+                    key={cat.value}
+                    onPress={() => setCategory(cat.value)}
+                    style={[styles.catOption, active && styles.catOptionActive]}
                   >
-                    {preset.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                    <Text style={[styles.catOptionText, active && styles.catOptionTextActive]}>
+                      {cat.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
-        </View>
 
-        {/* Required Skills */}
-        <View style={styles.fieldSection}>
-          <Text style={styles.fieldLabel}>Required Skills</Text>
-          <View style={styles.skillsTagWrap}>
-            {skillsList.map((skill) => (
-              <View key={skill} style={styles.skillTag}>
-                <Text style={styles.skillTagText}>{skill}</Text>
-                <Pressable onPress={() => handleRemoveSkill(skill)}>
-                  <Ionicons name="close" size={14} color={Palette.slate600} />
-                </Pressable>
-              </View>
-            ))}
+          <Input
+            label="Detailed Scope & Requirements"
+            placeholder="Describe what needs to be solved, what you've tried, and expected deliverables..."
+            value={description}
+            onChangeText={(t) => {
+              setDescription(t);
+              if (errors.description) setErrors((prev) => ({ ...prev, description: '' }));
+            }}
+            multiline
+            numberOfLines={5}
+            style={styles.descInput}
+            error={errors.description}
+          />
+
+          {/* Budget */}
+          <Input
+            label="Budget Offering (INR)"
+            placeholder="e.g. 800"
+            value={budget}
+            onChangeText={(t) => {
+              setBudget(t);
+              if (errors.budgetInr) setErrors((prev) => ({ ...prev, budgetInr: '' }));
+            }}
+            keyboardType="numeric"
+            leftIcon={<Text style={styles.currencyPrefix}>₹</Text>}
+            error={errors.budgetInr}
+            helperText="Milestone Escrow: Funds are safely held until you verify deliverables."
+          />
+
+          {/* Deadline Preset */}
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Target Completion Window</Text>
+            <View style={styles.presetRow}>
+              {DEADLINE_PRESETS.map((preset) => {
+                const isSelected = selectedPresetHours === preset.hours;
+                return (
+                  <Pressable
+                    key={preset.hours}
+                    onPress={() => setSelectedPresetHours(preset.hours)}
+                    style={[styles.presetBtn, isSelected && styles.presetBtnActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.presetText,
+                        isSelected && styles.presetTextActive,
+                      ]}
+                    >
+                      {preset.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-          <View style={styles.addSkillRow}>
-            <Input
-              placeholder="Add required skill (e.g. C++, Linear Algebra)"
-              value={skillInput}
-              onChangeText={setSkillInput}
-              containerStyle={styles.skillInputFlex}
-            />
-            <Button title="Add" onPress={handleAddSkill} variant="secondary" size="md" />
+
+          {/* Required Skills */}
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Required Competencies</Text>
+            <View style={styles.skillsTagWrap}>
+              {skillsList.map((skill) => (
+                <View key={skill} style={styles.skillTag}>
+                  <Text style={styles.skillTagText}>{skill}</Text>
+                  <Pressable onPress={() => handleRemoveSkill(skill)}>
+                    <Ionicons name="close" size={14} color={Palette.slate600} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+            <View style={styles.addSkillRow}>
+              <Input
+                placeholder="Add skill (e.g. C++, Linear Algebra)"
+                value={skillInput}
+                onChangeText={setSkillInput}
+                containerStyle={styles.skillInputFlex}
+              />
+              <Button title="Add" onPress={handleAddSkill} variant="secondary" size="md" />
+            </View>
+            {errors.requiredSkills && (
+              <Text style={styles.errorText}>{errors.requiredSkills}</Text>
+            )}
           </View>
-          {errors.requiredSkills && (
-            <Text style={styles.errorText}>{errors.requiredSkills}</Text>
-          )}
-        </View>
 
-        {/* Honor Code & Academic Integrity Disclaimer */}
-        <View style={styles.integrityBox}>
-          <Ionicons name="shield-checkmark" size={18} color={Palette.primary600} />
-          <Text style={styles.integrityText}>
-            <Text style={styles.boldText}>Academic Integrity Notice: </Text>
-            Tasks asking for live examination assistance, exam impersonation, or copyright infringement violate student conduct policies and will be terminated immediately.
-          </Text>
-        </View>
+          {/* Academic Integrity Pledge */}
+          <View style={styles.integrityBox}>
+            <Ionicons name="shield-checkmark" size={18} color={Palette.primary600} />
+            <Text style={styles.integrityText}>
+              <Text style={styles.boldText}>Academic Integrity Notice: </Text>
+              Requests for live examination fraud, exam impersonation, or plagiarism violate campus policy and are strictly prohibited.
+            </Text>
+          </View>
 
-        <Button
-          title="Publish Task"
-          onPress={handleSubmit}
-          variant="primary"
-          size="lg"
-          isLoading={createTaskMutation.isPending}
-          style={styles.submitBtn}
-        />
-      </ScrollView>
+          <Button
+            title="Publish Task Request"
+            onPress={handleSubmit}
+            variant="primary"
+            size="lg"
+            isLoading={createTaskMutation.isPending}
+            style={styles.submitBtn}
+          />
+        </View>
+      </ResponsiveContainer>
     </KeyboardAvoidingView>
   );
 }
@@ -291,26 +302,46 @@ export default function CreateTaskScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Palette.white,
+    backgroundColor: Palette.slate50,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.lg,
   },
+  formCard: {
+    backgroundColor: Palette.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    ...Shadows.sm,
+  },
+  headerBox: {
+    marginBottom: Spacing.xl,
+  },
+  formTitle: {
+    ...Typography.h2,
+    color: Palette.slate900,
+    marginBottom: 4,
+  },
+  formSubtitle: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Palette.slate600,
+    lineHeight: 20,
+  },
   fieldSection: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   fieldLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...Typography.captionBold,
     color: Palette.slate700,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   catScroll: {
     flexDirection: 'row',
   },
   catOption: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: Radius.md,
     backgroundColor: Palette.slate100,
@@ -323,7 +354,7 @@ const styles = StyleSheet.create({
     borderColor: Palette.primary600,
   },
   catOptionText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: Palette.slate700,
   },
@@ -379,9 +410,11 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: Radius.full,
     gap: 6,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
   },
   skillTagText: {
-    fontSize: 12,
+    ...Typography.caption,
     color: Palette.slate800,
     fontWeight: '500',
   },
@@ -395,7 +428,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   errorText: {
-    fontSize: 12,
+    ...Typography.tiny,
     color: Palette.danger500,
     marginTop: 4,
   },
@@ -410,7 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   integrityText: {
-    fontSize: 12,
+    ...Typography.tiny,
     color: Palette.slate700,
     flex: 1,
     lineHeight: 18,

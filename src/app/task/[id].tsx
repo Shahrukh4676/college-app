@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Pressable,
   Modal,
   Alert,
@@ -11,8 +10,9 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Palette, Radius, Shadows, Spacing } from '@/theme';
+import { Palette, Radius, Shadows, Spacing, Typography } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
+import { useResponsive } from '@/hooks/useResponsive';
 import { taskService } from '@/services/taskService';
 import { offerService } from '@/services/offerService';
 import { AppHeader } from '@/components/ui/app-header';
@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { OfferCard } from '@/components/offers/offer-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorView } from '@/components/ui/error-view';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Ionicons } from '@expo/vector-icons';
 import { Task } from '@/types';
 
@@ -32,6 +33,7 @@ export default function TaskDetailScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { isMobile } = useResponsive();
 
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [offerAmount, setOfferAmount] = useState('');
@@ -150,10 +152,10 @@ export default function TaskDetailScreen() {
     return (
       <View style={styles.container}>
         <AppHeader title="Task Details" canGoBack />
-        <View style={styles.skeletonBox}>
-          <Skeleton height={200} borderRadius={Radius.lg} />
+        <ResponsiveContainer maxWidth="detail" style={{ flex: 1, padding: Spacing.xl }}>
+          <Skeleton height={200} borderRadius={Radius.lg} style={{ marginBottom: 16 }} />
           <Skeleton height={100} borderRadius={Radius.lg} />
-        </View>
+        </ResponsiveContainer>
       </View>
     );
   }
@@ -195,173 +197,262 @@ export default function TaskDetailScreen() {
         }
       />
 
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 80 }]}
+      <ResponsiveContainer
+        maxWidth="detail"
+        asScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 100 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Status & Category Bar */}
-        <View style={styles.metaBadgeRow}>
-          <Badge label={badge.label} variant={badge.variant} showDot />
-          <View style={styles.categoryPill}>
-            <Text style={styles.categoryText}>{task.category}</Text>
-          </View>
-        </View>
-
-        <Text style={styles.title}>{task.title}</Text>
-
-        {/* Pricing & Deadline Card */}
-        <View style={styles.budgetCard}>
-          <View style={styles.budgetCol}>
-            <Text style={styles.budgetSub}>Budget Offering</Text>
-            <Text style={styles.budgetNum}>₹{task.budgetInr.toLocaleString('en-IN')}</Text>
-          </View>
-          <View style={styles.budgetDivider} />
-          <View style={styles.budgetCol}>
-            <Text style={styles.budgetSub}>Target Deadline</Text>
-            <Text style={styles.deadlineNum}>
-              {new Date(task.deadline).toLocaleDateString('en-IN', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
-          </View>
-        </View>
-
-        {/* Requester info */}
-        <View style={styles.requesterCard}>
-          <Avatar
-            url={task.requesterAvatarUrl}
-            name={task.requesterName}
-            size="md"
-          />
-          <View style={styles.requesterDetails}>
-            <Text style={styles.requesterLabel}>Requested by</Text>
-            <Text style={styles.requesterName}>{task.requesterName}</Text>
-            <Text style={styles.requesterCollege}>{task.requesterCollege}</Text>
-          </View>
-          <View style={styles.ratingBadge}>
-            <Ionicons name="star" size={13} color="#EAB308" />
-            <Text style={styles.ratingText}>{task.requesterRating.toFixed(1)}</Text>
-          </View>
-        </View>
-
-        {/* Description */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Task Description</Text>
-          <Text style={styles.description}>{task.description}</Text>
-        </View>
-
-        {/* Skills */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Required Skills</Text>
-          <View style={styles.skillsRow}>
-            {task.requiredSkills.map((skill, idx) => (
-              <View key={idx} style={styles.skillPill}>
-                <Text style={styles.skillText}>{skill}</Text>
+        <View style={[styles.mainLayout, !isMobile && styles.desktopLayout]}>
+          {/* Primary Column (Details & Proposals) */}
+          <View style={[styles.primaryColumn, !isMobile && styles.desktopPrimaryColumn]}>
+            {/* Meta & Badges */}
+            <View style={styles.metaBadgeRow}>
+              <Badge label={badge.label} variant={badge.variant} showDot />
+              <View style={styles.categoryPill}>
+                <Text style={styles.categoryText}>{task.category}</Text>
               </View>
-            ))}
-          </View>
-        </View>
+            </View>
 
-        {/* Assigned Helper section if present */}
-        {task.helperId && (
-          <View style={styles.helperSection}>
-            <Text style={styles.sectionHeading}>Assigned Helper</Text>
-            <View style={styles.helperCard}>
-              <Avatar
-                url={task.helperAvatarUrl}
-                name={task.helperName || 'Helper'}
-                size="md"
-              />
-              <View style={styles.helperMeta}>
-                <Text style={styles.helperName}>{task.helperName}</Text>
-                <Text style={styles.helperRole}>Assigned Academic Peer</Text>
+            <Text style={styles.title}>{task.title}</Text>
+
+            {/* Mobile-Only Budget Card */}
+            {isMobile && (
+              <View style={styles.budgetCard}>
+                <View style={styles.budgetCol}>
+                  <Text style={styles.budgetSub}>Budget Offering</Text>
+                  <Text style={styles.budgetNum}>₹{task.budgetInr.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={styles.budgetDivider} />
+                <View style={styles.budgetCol}>
+                  <Text style={styles.budgetSub}>Target Deadline</Text>
+                  <Text style={styles.deadlineNum}>
+                    {new Date(task.deadline).toLocaleDateString('en-IN', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                </View>
               </View>
-              <Button
-                title="Open Chat"
-                variant="primary"
-                size="sm"
-                icon={<Ionicons name="chatbubble" size={14} color={Palette.white} />}
-                onPress={() => router.push('/(tabs)/messages')}
-              />
+            )}
+
+            {/* Description Card */}
+            <View style={styles.cardSection}>
+              <Text style={styles.sectionHeading}>Task Description</Text>
+              <Text style={styles.description}>{task.description}</Text>
+            </View>
+
+            {/* Required Skills */}
+            <View style={styles.cardSection}>
+              <Text style={styles.sectionHeading}>Required Competencies</Text>
+              <View style={styles.skillsRow}>
+                {task.requiredSkills.map((skill, idx) => (
+                  <View key={idx} style={styles.skillPill}>
+                    <Text style={styles.skillText}>{skill}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* Assigned Helper Section if present */}
+            {task.helperId && (
+              <View style={styles.cardSection}>
+                <Text style={styles.sectionHeading}>Assigned Helper</Text>
+                <View style={styles.helperCard}>
+                  <Avatar
+                    url={task.helperAvatarUrl}
+                    name={task.helperName || 'Helper'}
+                    size="md"
+                  />
+                  <View style={styles.helperMeta}>
+                    <Text style={styles.helperName}>{task.helperName}</Text>
+                    <Text style={styles.helperRole}>Assigned Campus Peer</Text>
+                  </View>
+                  <Button
+                    title="Open Chat"
+                    variant="primary"
+                    size="sm"
+                    icon={<Ionicons name="chatbubble" size={14} color={Palette.white} />}
+                    onPress={() => router.push('/(tabs)/messages')}
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* Lifecycle State Controls */}
+            {task.status === 'IN_PROGRESS' && (isHelper || isRequester) && (
+              <View style={styles.actionBox}>
+                <Text style={styles.actionBoxTitle}>Task Status Control</Text>
+                {isHelper && (
+                  <Button
+                    title="Submit Completed Work"
+                    variant="primary"
+                    size="lg"
+                    onPress={() =>
+                      updateStatusMutation.mutate({
+                        status: 'SUBMITTED',
+                        notes: 'Work submitted for review by helper.',
+                      })
+                    }
+                  />
+                )}
+                {isRequester && (
+                  <Button
+                    title="Mark Completed & Release Escrow"
+                    variant="primary"
+                    size="lg"
+                    onPress={() =>
+                      Alert.alert(
+                        'Release Escrow Payment',
+                        `Confirm releasing ₹${task.budgetInr} from escrow to ${task.helperName}?`,
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Release Payment',
+                            onPress: () =>
+                              updateStatusMutation.mutate({
+                                status: 'COMPLETED',
+                              }),
+                          },
+                        ]
+                      )
+                    }
+                  />
+                )}
+              </View>
+            )}
+
+            {/* Received Proposals / Offers Section */}
+            <View style={styles.cardSection}>
+              <View style={styles.proposalsHeaderRow}>
+                <Text style={styles.sectionHeading}>
+                  Proposals & Offers ({offers?.length || 0})
+                </Text>
+                {task.status === 'OPEN' && !isRequester && !isMobile && (
+                  <Button
+                    title="Submit Offer"
+                    size="sm"
+                    variant="outline"
+                    onPress={() => {
+                      setOfferAmount(task.budgetInr.toString());
+                      setIsOfferModalOpen(true);
+                    }}
+                  />
+                )}
+              </View>
+
+              {isOffersLoading ? (
+                <Skeleton height={120} borderRadius={Radius.lg} />
+              ) : offers && offers.length > 0 ? (
+                offers.map((offer) => (
+                  <OfferCard
+                    key={offer.id}
+                    offer={offer}
+                    isRequester={isRequester}
+                    onAccept={(o) => acceptOfferMutation.mutate(o.id)}
+                    onReject={(o) => rejectOfferMutation.mutate(o.id)}
+                    isActionLoading={acceptOfferMutation.isPending}
+                  />
+                ))
+              ) : (
+                <View style={styles.emptyOffersBox}>
+                  <Ionicons name="chatbubbles-outline" size={28} color={Palette.slate300} />
+                  <Text style={styles.emptyOffersText}>
+                    No proposals submitted yet. Be the first to offer assistance!
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
-        )}
 
-        {/* Lifecycle Transitions based on status */}
-        {task.status === 'IN_PROGRESS' && (isHelper || isRequester) && (
-          <View style={styles.actionBox}>
-            <Text style={styles.actionBoxTitle}>Task Status Control</Text>
-            {isHelper && (
-              <Button
-                title="Submit Completed Work"
-                variant="primary"
-                size="lg"
-                onPress={() =>
-                  updateStatusMutation.mutate({
-                    status: 'SUBMITTED',
-                    notes: 'Work submitted for review by helper.',
-                  })
-                }
-              />
+          {/* Side Action Column (Desktop/Tablet) or Bottom Requester Card (Mobile) */}
+          <View style={[styles.sideColumn, !isMobile && styles.desktopSideColumn]}>
+            {/* Desktop Budget & Action Card */}
+            {!isMobile && (
+              <View style={styles.desktopActionPanel}>
+                <View style={styles.panelBudgetHeader}>
+                  <Text style={styles.panelBudgetLabel}>Budget Offering</Text>
+                  <Text style={styles.panelBudgetVal}>
+                    ₹{task.budgetInr.toLocaleString('en-IN')}
+                  </Text>
+                </View>
+
+                <View style={styles.panelRow}>
+                  <Ionicons name="time-outline" size={16} color={Palette.slate500} />
+                  <View>
+                    <Text style={styles.panelRowLabel}>Target Deadline</Text>
+                    <Text style={styles.panelRowVal}>
+                      {new Date(task.deadline).toLocaleDateString('en-IN', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.escrowNoticeBox}>
+                  <Ionicons name="shield-checkmark" size={16} color={Palette.success500} />
+                  <Text style={styles.escrowNoticeText}>
+                    Milestone Escrow Protected. Funds are held safely until task verification.
+                  </Text>
+                </View>
+
+                {!isRequester && task.status === 'OPEN' && (
+                  <Button
+                    title="Submit Proposal / Offer"
+                    variant="primary"
+                    size="lg"
+                    onPress={() => {
+                      setOfferAmount(task.budgetInr.toString());
+                      setIsOfferModalOpen(true);
+                    }}
+                    style={styles.panelSubmitBtn}
+                  />
+                )}
+              </View>
             )}
-            {isRequester && (
-              <Button
-                title="Mark Completed & Release Escrow"
-                variant="primary"
-                size="lg"
-                onPress={() =>
-                  Alert.alert(
-                    'Release Escrow Payment',
-                    `Confirm releasing ₹${task.budgetInr} from escrow to ${task.helperName}?`,
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Release Payment',
-                        onPress: () =>
-                          updateStatusMutation.mutate({
-                            status: 'COMPLETED',
-                          }),
-                      },
-                    ]
-                  )
-                }
-              />
-            )}
+
+            {/* Requester Profile Card */}
+            <View style={styles.requesterCard}>
+              <View style={styles.requesterHeader}>
+                <Avatar
+                  url={task.requesterAvatarUrl}
+                  name={task.requesterName}
+                  size="md"
+                />
+                <View style={styles.requesterDetails}>
+                  <Text style={styles.requesterLabel}>Requested by</Text>
+                  <Text style={styles.requesterName}>{task.requesterName}</Text>
+                  <Text style={styles.requesterCollege}>{task.requesterCollege}</Text>
+                </View>
+              </View>
+
+              <View style={styles.requesterDivider} />
+
+              <View style={styles.requesterMetaRow}>
+                <View style={styles.ratingBadge}>
+                  <Ionicons name="star" size={14} color="#EAB308" />
+                  <Text style={styles.ratingText}>{task.requesterRating.toFixed(1)} Peer Rating</Text>
+                </View>
+                <View style={styles.campusVerifiedBadge}>
+                  <Ionicons name="checkmark-circle" size={13} color={Palette.primary600} />
+                  <Text style={styles.campusVerifiedText}>Campus Verified</Text>
+                </View>
+              </View>
+            </View>
           </View>
-        )}
-
-        {/* Received Offers Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>
-            Proposals & Offers ({offers?.length || 0})
-          </Text>
-
-          {isOffersLoading ? (
-            <Skeleton height={120} borderRadius={Radius.lg} />
-          ) : offers && offers.length > 0 ? (
-            offers.map((offer) => (
-              <OfferCard
-                key={offer.id}
-                offer={offer}
-                isRequester={isRequester}
-                onAccept={(o) => acceptOfferMutation.mutate(o.id)}
-                onReject={(o) => rejectOfferMutation.mutate(o.id)}
-                isActionLoading={acceptOfferMutation.isPending}
-              />
-            ))
-          ) : (
-            <Text style={styles.emptyOffersText}>
-              No proposals submitted yet. Be the first to assist!
-            </Text>
-          )}
         </View>
-      </ScrollView>
+      </ResponsiveContainer>
 
-      {/* Sticky Bottom Action if helper and task is OPEN */}
-      {!isRequester && task.status === 'OPEN' && (
+      {/* Sticky Bottom Action (Mobile Only) */}
+      {isMobile && !isRequester && task.status === 'OPEN' && (
         <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <Button
             title="Submit Proposal / Offer"
@@ -449,42 +540,61 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.lg,
+  },
+  mainLayout: {
+    width: '100%',
+  },
+  desktopLayout: {
+    flexDirection: 'row',
+    gap: Spacing.xxl,
+    alignItems: 'flex-start',
+  },
+  primaryColumn: {
+    flex: 1,
+  },
+  desktopPrimaryColumn: {
+    flex: 1.6,
+  },
+  sideColumn: {
+    width: '100%',
+    marginTop: Spacing.lg,
+  },
+  desktopSideColumn: {
+    width: 360,
+    marginTop: 0,
   },
   metaBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
+    gap: 8,
+    marginBottom: Spacing.md,
   },
   categoryPill: {
     backgroundColor: Palette.slate200,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.xs,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
   },
   categoryText: {
-    fontSize: 11,
+    ...Typography.tiny,
     color: Palette.slate700,
-    fontWeight: '600',
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
+    ...Typography.h1,
+    fontSize: 24,
     color: Palette.slate900,
-    lineHeight: 28,
-    marginBottom: Spacing.md,
-    letterSpacing: -0.3,
+    marginBottom: Spacing.lg,
+    lineHeight: 32,
   },
   budgetCard: {
     flexDirection: 'row',
     backgroundColor: Palette.white,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Palette.slate200,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     ...Shadows.sm,
   },
   budgetCol: {
@@ -492,87 +602,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   budgetSub: {
-    fontSize: 11,
+    ...Typography.tiny,
     color: Palette.slate500,
-    textTransform: 'uppercase',
-    fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   budgetNum: {
-    fontSize: 20,
-    fontWeight: '800',
+    ...Typography.amountMedium,
     color: Palette.primary600,
-  },
-  deadlineNum: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Palette.slate800,
   },
   budgetDivider: {
     width: 1,
     height: 36,
     backgroundColor: Palette.slate200,
   },
-  requesterCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  deadlineNum: {
+    ...Typography.bodyBold,
+    color: Palette.slate800,
+  },
+  cardSection: {
     backgroundColor: Palette.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
     borderWidth: 1,
     borderColor: Palette.slate200,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     ...Shadows.sm,
   },
-  requesterDetails: {
-    marginLeft: Spacing.md,
-    flex: 1,
-  },
-  requesterLabel: {
-    fontSize: 11,
-    color: Palette.slate400,
-  },
-  requesterName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Palette.slate900,
-  },
-  requesterCollege: {
-    fontSize: 11,
-    color: Palette.slate500,
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF9C3',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: Radius.xs,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#854D0E',
-    marginLeft: 3,
-  },
-  section: {
-    marginBottom: Spacing.lg,
-  },
   sectionHeading: {
+    ...Typography.h3,
     fontSize: 16,
-    fontWeight: '700',
     color: Palette.slate900,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   description: {
-    fontSize: 14,
+    ...Typography.body,
     color: Palette.slate700,
     lineHeight: 22,
-    backgroundColor: Palette.white,
-    padding: Spacing.lg,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Palette.slate200,
   },
   skillsRow: {
     flexDirection: 'row',
@@ -580,14 +645,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   skillPill: {
-    backgroundColor: Palette.slate200,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Radius.md,
+    backgroundColor: Palette.slate100,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
   },
   skillText: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...Typography.captionBold,
     color: Palette.slate800,
   },
   helperSection: {
@@ -601,38 +667,165 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Palette.slate200,
-    gap: Spacing.md,
+    gap: 12,
   },
   helperMeta: {
     flex: 1,
   },
   helperName: {
-    fontSize: 14,
-    fontWeight: '700',
+    ...Typography.bodyBold,
     color: Palette.slate900,
   },
   helperRole: {
-    fontSize: 12,
+    ...Typography.tiny,
     color: Palette.slate500,
   },
   actionBox: {
     backgroundColor: Palette.primary50,
-    borderRadius: Radius.lg,
     padding: Spacing.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Palette.primary200,
     marginBottom: Spacing.lg,
+    gap: 12,
   },
   actionBoxTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Palette.primary700,
+    ...Typography.bodyBold,
+    color: Palette.primary800,
+  },
+  proposalsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: Spacing.md,
   },
+  emptyOffersBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xxl,
+    gap: 8,
+  },
   emptyOffersText: {
-    fontSize: 13,
+    ...Typography.body,
+    fontSize: 14,
     color: Palette.slate500,
-    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  desktopActionPanel: {
+    backgroundColor: Palette.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    marginBottom: Spacing.lg,
+    ...Shadows.sm,
+    gap: Spacing.md,
+  },
+  panelBudgetHeader: {
+    paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Palette.slate100,
+  },
+  panelBudgetLabel: {
+    ...Typography.tiny,
+    color: Palette.slate500,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  panelBudgetVal: {
+    ...Typography.amountLarge,
+    color: Palette.primary600,
+    marginTop: 2,
+  },
+  panelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  panelRowLabel: {
+    ...Typography.tiny,
+    color: Palette.slate500,
+  },
+  panelRowVal: {
+    ...Typography.bodyBold,
+    color: Palette.slate800,
+  },
+  escrowNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Palette.success50,
+    padding: 10,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Palette.success100,
+  },
+  escrowNoticeText: {
+    ...Typography.tiny,
+    color: Palette.success700,
+    flex: 1,
+    lineHeight: 15,
+  },
+  panelSubmitBtn: {
+    marginTop: Spacing.xs,
+  },
+  requesterCard: {
+    backgroundColor: Palette.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    ...Shadows.sm,
+  },
+  requesterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  requesterDetails: {
+    flex: 1,
+  },
+  requesterLabel: {
+    ...Typography.tiny,
+    color: Palette.slate400,
+  },
+  requesterName: {
+    ...Typography.bodyBold,
+    color: Palette.slate900,
+  },
+  requesterCollege: {
+    ...Typography.caption,
+    color: Palette.slate500,
+  },
+  requesterDivider: {
+    height: 1,
+    backgroundColor: Palette.slate100,
+    marginVertical: Spacing.md,
+  },
+  requesterMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    ...Typography.captionBold,
+    color: Palette.slate800,
+  },
+  campusVerifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  campusVerifiedText: {
+    ...Typography.tiny,
+    color: Palette.primary700,
+    fontWeight: '600',
   },
   bottomBar: {
     position: 'absolute',
@@ -640,60 +833,57 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: Palette.white,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Palette.slate200,
-    ...Shadows.lg,
-  },
-  skeletonBox: {
-    padding: Spacing.xl,
-    gap: Spacing.md,
+    padding: Spacing.lg,
+    ...Shadows.md,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
   },
   modalCard: {
+    width: '100%',
+    maxWidth: 480,
     backgroundColor: Palette.white,
-    borderTopLeftRadius: Radius.xl,
-    borderTopRightRadius: Radius.xl,
-    padding: Spacing.xl,
+    borderRadius: Radius.xl,
+    padding: Spacing.xxl,
     ...Shadows.lg,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    ...Typography.h2,
     color: Palette.slate900,
   },
   modalErrorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     backgroundColor: Palette.danger50,
     padding: 10,
     borderRadius: Radius.md,
+    gap: 8,
     marginBottom: Spacing.md,
   },
   modalErrorText: {
-    fontSize: 12,
+    ...Typography.caption,
     color: Palette.danger700,
+    flex: 1,
   },
   inrSymbol: {
     fontSize: 16,
     fontWeight: '700',
-    color: Palette.slate600,
-    marginRight: 4,
+    color: Palette.slate700,
   },
   proposalInput: {
-    minHeight: 80,
+    height: 90,
     textAlignVertical: 'top',
   },
   submitOfferBtn: {

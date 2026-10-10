@@ -132,7 +132,32 @@ export const Radius = {
   full: 9999,
 } as const;
 
+export const Breakpoints = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  xxl: 1440,
+} as const;
+
+export const Layout = {
+  maxContentWidth: 1240,
+  maxDetailWidth: 1080,
+  maxFormWidth: 680,
+  maxAuthWidth: 460,
+  gutterMobile: 16,
+  gutterTablet: 24,
+  gutterDesktop: 32,
+  minTouchTarget: 44,
+} as const;
+
 export const Typography = {
+  display: {
+    fontSize: 34,
+    lineHeight: 40,
+    fontWeight: '800' as const,
+    letterSpacing: -0.8,
+  },
   h1: {
     fontSize: 28,
     lineHeight: 34,
@@ -150,6 +175,11 @@ export const Typography = {
     lineHeight: 24,
     fontWeight: '600' as const,
   },
+  h4: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '600' as const,
+  },
   body: {
     fontSize: 15,
     lineHeight: 22,
@@ -159,6 +189,11 @@ export const Typography = {
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600' as const,
+  },
+  bodyMedium: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500' as const,
   },
   caption: {
     fontSize: 13,
@@ -174,6 +209,22 @@ export const Typography = {
     fontSize: 11,
     lineHeight: 15,
     fontWeight: '500' as const,
+  },
+  amountLarge: {
+    fontSize: 28,
+    lineHeight: 32,
+    fontWeight: '800' as const,
+    letterSpacing: -0.5,
+  },
+  amountMedium: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700' as const,
+  },
+  amountSmall: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700' as const,
   },
 } as const;
 
@@ -206,3 +257,4 @@ export const Shadows = {
     },
   }),
 } as const;
+

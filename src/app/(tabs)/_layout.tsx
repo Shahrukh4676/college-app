@@ -1,30 +1,40 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Palette } from '@/theme';
+import { useResponsive } from '@/hooks/useResponsive';
+import { DesktopNav } from '@/components/navigation/desktop-nav';
 
 export default function TabLayout() {
+  const { isMobile } = useResponsive();
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: Palette.primary600,
-        tabBarInactiveTintColor: Palette.slate400,
-        tabBarStyle: {
-          backgroundColor: Palette.white,
-          borderTopColor: Palette.slate200,
-          borderTopWidth: 1,
-          height: Platform.OS === 'android' ? 64 : 60,
-          paddingBottom: Platform.OS === 'android' ? 8 : 6,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
-      }}
-    >
+    <View style={{ flex: 1, backgroundColor: Palette.slate50 }}>
+      <DesktopNav />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: Palette.primary600,
+          tabBarInactiveTintColor: Palette.slate400,
+          tabBarStyle: isMobile
+            ? {
+                backgroundColor: Palette.white,
+                borderTopColor: Palette.slate200,
+                borderTopWidth: 1,
+                height: Platform.OS === 'android' ? 64 : 60,
+                paddingBottom: Platform.OS === 'android' ? 8 : 6,
+                paddingTop: 6,
+              }
+            : {
+                display: 'none',
+              },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+          },
+        }}
+      >
       <Tabs.Screen
         name="home"
         options={{
@@ -91,5 +101,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </View>
   );
 }

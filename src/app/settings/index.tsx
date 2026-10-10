@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Switch,
   Pressable,
   Alert,
@@ -11,23 +10,23 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Palette, Radius, Spacing } from '@/theme';
+import { Palette, Radius, Spacing, Typography, Shadows } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
-import { API_CONFIG } from '@/services/api/config';
 import { AppHeader } from '@/components/ui/app-header';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { logout, isMockMode, setDevMockMode } = useAuth();
+  const { logout, user } = useAuth();
 
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to log out?', [
+    Alert.alert('Sign Out', 'Are you sure you want to log out of Student Marketplace?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Log Out',
@@ -66,13 +65,38 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <AppHeader title="Settings" canGoBack />
 
-      <ScrollView
+      <ResponsiveContainer
+        maxWidth="form"
+        asScrollView
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + Spacing.xxxl },
         ]}
-        showsVerticalScrollIndicator={false}
       >
+        {/* User Account Overview */}
+        {user && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Account Profile</Text>
+            <View style={styles.card}>
+              <View style={styles.row}>
+                <View style={styles.rowTextCol}>
+                  <Text style={styles.rowTitle}>{user.fullName}</Text>
+                  <Text style={styles.rowDesc}>{user.email}</Text>
+                  <Text style={styles.campusMeta}>
+                    {user.college || 'Campus Member'} {user.course ? `• ${user.course}` : ''}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => router.push('/(tabs)/profile')}
+                  style={styles.editProfileBtn}
+                >
+                  <Text style={styles.editProfileText}>View Profile</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Notifications Preference */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notifications</Text>
@@ -177,50 +201,9 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Developer / Integration Mode (Visible only in __DEV__) */}
-        {__DEV__ && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Developer Diagnostics</Text>
-            <View style={styles.card}>
-              <View style={styles.row}>
-                <View style={styles.rowTextCol}>
-                  <Text style={styles.rowTitle}>Offline Mock API Adapter</Text>
-                  <Text style={styles.rowDesc}>
-                    {isMockMode
-                      ? 'Enabled: Using simulated local campus data'
-                      : `Disabled: Connecting to live backend at ${API_CONFIG.BASE_URL}`}
-                  </Text>
-                </View>
-                <Switch
-                  value={isMockMode}
-                  onValueChange={(val) => {
-                    setDevMockMode?.(val);
-                    Alert.alert(
-                      'API Mode Switched',
-                      val
-                        ? 'Using mock repository. Restart or refresh screens to reload demo fixtures.'
-                        : `Targeting live backend: ${API_CONFIG.BASE_URL}`
-                    );
-                  }}
-                  trackColor={{ false: Palette.slate300, true: Palette.primary600 }}
-                />
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.row}>
-                <View style={styles.rowTextCol}>
-                  <Text style={styles.rowTitle}>Backend Base URL</Text>
-                  <Text style={styles.rowDesc}>{API_CONFIG.BASE_URL}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Actions */}
+        {/* Account Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.sectionTitle}>Account Actions</Text>
           <View style={styles.card}>
             <Pressable onPress={handleLogout} style={styles.navRow}>
               <Ionicons name="log-out-outline" size={20} color={Palette.slate700} />
@@ -240,8 +223,8 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <Text style={styles.versionText}>Student Marketplace v1.0.0 (Release Build)</Text>
-      </ScrollView>
+        <Text style={styles.versionText}>Student Marketplace v1.0.0 (Campus Release)</Text>
+      </ResponsiveContainer>
     </View>
   );
 }
@@ -252,14 +235,13 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.slate50,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.lg,
   },
   section: {
     marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    fontSize: 14,
+    ...Typography.tiny,
     fontWeight: '700',
     color: Palette.slate500,
     textTransform: 'uppercase',
@@ -272,6 +254,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Palette.slate200,
     overflow: 'hidden',
+    ...Shadows.sm,
   },
   row: {
     flexDirection: 'row',
@@ -284,14 +267,29 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
   rowTitle: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...Typography.bodyBold,
     color: Palette.slate900,
   },
   rowDesc: {
-    fontSize: 12,
+    ...Typography.caption,
     color: Palette.slate500,
     marginTop: 2,
+  },
+  campusMeta: {
+    ...Typography.tiny,
+    color: Palette.primary700,
+    marginTop: 4,
+  },
+  editProfileBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.sm,
+    backgroundColor: Palette.primary50,
+  },
+  editProfileText: {
+    ...Typography.tiny,
+    color: Palette.primary700,
+    fontWeight: '600',
   },
   divider: {
     height: 1,
@@ -304,14 +302,13 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   navRowText: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...Typography.bodyMedium,
     color: Palette.slate800,
     flex: 1,
   },
   versionText: {
     textAlign: 'center',
-    fontSize: 12,
+    ...Typography.tiny,
     color: Palette.slate400,
     marginTop: Spacing.md,
   },

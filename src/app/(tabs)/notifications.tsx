@@ -10,12 +10,14 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Palette, Radius, Spacing } from '@/theme';
+import { Palette, Radius, Spacing, Typography, Shadows } from '@/theme';
+import { useResponsive } from '@/hooks/useResponsive';
 import { notificationService } from '@/services/notificationService';
 import { AppNotification, NotificationType } from '@/types';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorView } from '@/components/ui/error-view';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Ionicons } from '@expo/vector-icons';
 
 function formatRelativeTime(iso: string) {
@@ -36,6 +38,7 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const { isMobile } = useResponsive();
 
   const {
     data: notifications,
@@ -90,78 +93,96 @@ export default function NotificationsScreen() {
     }
   };
 
-
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 16) }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <Text style={styles.headerSubtitle}>
-          Real-time updates on offers, payments, and task status.
-        </Text>
-      </View>
+    <View style={styles.container}>
+      {/* Mobile Header */}
+      {isMobile && (
+        <View style={[styles.mobileHeader, { paddingTop: Math.max(insets.top, 16) }]}>
+          <Text style={styles.mobileTitle}>Alerts & Activity</Text>
+          <Text style={styles.mobileSubtitle}>
+            Real-time updates on offers, payments, and task status.
+          </Text>
+        </View>
+      )}
 
-      <FlatList
-        data={notifications || []}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={Palette.primary600}
-          />
-        }
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => {
-          const cfg = getNotifIcon(item.type);
-          return (
-            <Pressable
-              onPress={() => handlePress(item)}
-              style={({ pressed }) => [
-                styles.notifCard,
-                !item.isRead && styles.notifUnread,
-                pressed && styles.cardPressed,
-              ]}
-            >
-              <View style={[styles.iconWrap, { backgroundColor: cfg.bg }]}>
-                <Ionicons name={cfg.icon} size={20} color={cfg.color} />
-              </View>
+      <ResponsiveContainer maxWidth="detail" style={{ flex: 1 }}>
+        {!isMobile && (
+          <View style={styles.desktopHeader}>
+            <Text style={styles.desktopTitle}>Notifications & Alerts</Text>
+            <Text style={styles.desktopSubtitle}>
+              Stay updated on offers, escrow updates, and peer collaboration milestones.
+            </Text>
+          </View>
+        )}
 
-              <View style={styles.textCol}>
-                <View style={styles.titleRow}>
-                  <Text style={[styles.title, !item.isRead && styles.boldTitle]}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.timeText}>{formatRelativeTime(item.createdAt)}</Text>
+        <FlatList
+          data={notifications || []}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={Palette.primary600}
+            />
+          }
+          contentContainerStyle={[
+            styles.listContent,
+            !isMobile && styles.desktopListContent,
+          ]}
+          renderItem={({ item }) => {
+            const cfg = getNotifIcon(item.type);
+            return (
+              <Pressable
+                onPress={() => handlePress(item)}
+                style={({ pressed }) => [
+                  styles.notifCard,
+                  !item.isRead && styles.notifUnread,
+                  pressed && styles.cardPressed,
+                ]}
+              >
+                <View style={[styles.iconWrap, { backgroundColor: cfg.bg }]}>
+                  <Ionicons name={cfg.icon} size={20} color={cfg.color} />
                 </View>
 
-                <Text style={styles.messageText}>{item.message}</Text>
-              </View>
+                <View style={styles.textCol}>
+                  <View style={styles.titleRow}>
+                    <Text style={[styles.title, !item.isRead && styles.boldTitle]}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.timeText}>{formatRelativeTime(item.createdAt)}</Text>
+                  </View>
 
-              {!item.isRead && <View style={styles.unreadDot} />}
-            </Pressable>
-          );
-        }}
-        ListEmptyComponent={
-          isLoading ? (
-            <View style={styles.skeletonContainer}>
-              <Skeleton height={70} borderRadius={Radius.md} style={styles.skeletonItem} />
-              <Skeleton height={70} borderRadius={Radius.md} style={styles.skeletonItem} />
-            </View>
-          ) : isError ? (
-            <ErrorView
-              title="Unable to load notifications"
-              message="Could not retrieve recent updates. Please verify your connection or check if the notification service is online."
-              onRetry={refetch}
-            />
-          ) : (
-            <EmptyState
-              icon="notifications-off-outline"
-              title="No Notifications"
-              description="You are all caught up! You'll receive updates here when peers submit proposals or send messages."
-            />
-          )
-        }
-      />
+                  <Text style={styles.messageText}>{item.message}</Text>
+                </View>
+
+                {!item.isRead && <View style={styles.unreadDot} />}
+              </Pressable>
+            );
+          }}
+          ListEmptyComponent={
+            isLoading ? (
+              <View style={styles.skeletonContainer}>
+                <Skeleton height={70} borderRadius={Radius.lg} style={styles.skeletonItem} />
+                <Skeleton height={70} borderRadius={Radius.lg} style={styles.skeletonItem} />
+              </View>
+            ) : isError ? (
+              <ErrorView
+                title="Unable to load alerts"
+                message="Failed to connect to the notifications service. Please verify server connection."
+                onRetry={refetch}
+              />
+            ) : (
+              <EmptyState
+                icon="notifications-off-outline"
+                title="All Caught Up"
+                description="You have no notifications at this time. We will alert you when peers engage with your requests."
+                actionTitle="Explore Open Tasks"
+                onActionPress={() => router.push('/(tabs)/tasks')}
+              />
+            )
+          }
+        />
+      </ResponsiveContainer>
     </View>
   );
 }
@@ -169,54 +190,72 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Palette.white,
+    backgroundColor: Palette.slate50,
   },
-  header: {
+  mobileHeader: {
+    backgroundColor: Palette.white,
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Palette.slate200,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
+  mobileTitle: {
+    ...Typography.h2,
     color: Palette.slate900,
-    letterSpacing: -0.4,
+    marginBottom: 2,
   },
-  headerSubtitle: {
-    fontSize: 13,
+  mobileSubtitle: {
+    ...Typography.caption,
     color: Palette.slate500,
-    marginTop: 2,
+  },
+  desktopHeader: {
+    paddingVertical: Spacing.xl,
+  },
+  desktopTitle: {
+    ...Typography.h2,
+    color: Palette.navy950,
+    marginBottom: 4,
+  },
+  desktopSubtitle: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Palette.slate500,
   },
   listContent: {
-    flexGrow: 1,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.xxxl,
+  },
+  desktopListContent: {
+    paddingTop: 0,
   },
   notifCard: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Palette.slate100,
     alignItems: 'center',
+    backgroundColor: Palette.white,
+    padding: Spacing.md,
+    borderRadius: Radius.xl,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    gap: Spacing.md,
+    ...Shadows.sm,
   },
   notifUnread: {
-    backgroundColor: Palette.primary50,
+    backgroundColor: '#FAF5FF',
+    borderColor: '#E9D5FF',
   },
   cardPressed: {
-    opacity: 0.85,
+    backgroundColor: Palette.slate50,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: Radius.lg,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   textCol: {
     flex: 1,
-    marginLeft: Spacing.md,
-    marginRight: Spacing.sm,
   },
   titleRow: {
     flexDirection: 'row',
@@ -225,20 +264,21 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   title: {
-    fontSize: 14,
+    ...Typography.bodyMedium,
     color: Palette.slate800,
-    fontWeight: '600',
+    flex: 1,
+    marginRight: Spacing.sm,
   },
   boldTitle: {
-    color: Palette.slate900,
     fontWeight: '700',
+    color: Palette.slate900,
   },
   timeText: {
-    fontSize: 11,
+    ...Typography.tiny,
     color: Palette.slate400,
   },
   messageText: {
-    fontSize: 13,
+    ...Typography.caption,
     color: Palette.slate600,
     lineHeight: 18,
   },
@@ -249,10 +289,10 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.primary600,
   },
   skeletonContainer: {
-    padding: Spacing.xl,
-    gap: Spacing.md,
+    gap: Spacing.sm,
+    paddingTop: Spacing.md,
   },
   skeletonItem: {
-    marginBottom: Spacing.xs,
+    width: '100%',
   },
 });

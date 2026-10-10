@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
-import { Palette, Radius, Spacing } from '@/theme';
+import { Palette, Radius, Spacing, Typography, Shadows, Layout } from '@/theme';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,7 +38,6 @@ export default function ForgotPasswordScreen() {
     }
 
     setIsLoading(true);
-    // Simulate recovery email trigger
     setTimeout(() => {
       setIsLoading(false);
       setIsSubmitted(true);
@@ -57,68 +56,70 @@ export default function ForgotPasswordScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={Palette.slate800} />
-        </Pressable>
+        <View style={styles.cardContainer}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={22} color={Palette.slate800} />
+          </Pressable>
 
-        {isSubmitted ? (
-          <View style={styles.successBox}>
-            <View style={styles.successIconCircle}>
-              <Ionicons name="mail-open-outline" size={36} color={Palette.success500} />
-            </View>
-            <Text style={styles.successTitle}>Check Your Inbox</Text>
-            <Text style={styles.successDesc}>
-              We sent password reset instructions to{' '}
-              <Text style={styles.boldEmail}>{email}</Text>. Please follow the link to securely set a new password.
-            </Text>
-            <Button
-              title="Return to Login"
-              onPress={() => router.replace('/(auth)/login')}
-              variant="primary"
-              size="lg"
-              style={styles.returnBtn}
-            />
-          </View>
-        ) : (
-          <View>
-            <View style={styles.header}>
-              <Text style={styles.title}>Reset Password</Text>
-              <Text style={styles.subtitle}>
-                Enter your institutional or registered email address to receive password reset instructions.
+          {isSubmitted ? (
+            <View style={styles.successBox}>
+              <View style={styles.successIconCircle}>
+                <Ionicons name="mail-open-outline" size={32} color={Palette.success500} />
+              </View>
+              <Text style={styles.successTitle}>Check Your Inbox</Text>
+              <Text style={styles.successDesc}>
+                We sent password recovery instructions to{' '}
+                <Text style={styles.boldEmail}>{email}</Text>. Please follow the secure link in the email to set a new password.
               </Text>
-            </View>
-
-            <View style={styles.form}>
-              <Input
-                label="Registered Email"
-                placeholder="name@college.edu"
-                value={email}
-                onChangeText={(t) => {
-                  setEmail(t);
-                  if (error) setError(null);
-                }}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                error={error || undefined}
-                leftIcon={<Ionicons name="mail-outline" size={20} color={Palette.slate400} />}
-              />
-
               <Button
-                title="Send Reset Link"
-                onPress={handleSubmit}
+                title="Return to Sign In"
+                onPress={() => router.replace('/(auth)/login')}
                 variant="primary"
                 size="lg"
-                isLoading={isLoading}
-                style={styles.submitBtn}
+                style={styles.returnBtn}
               />
             </View>
-          </View>
-        )}
+          ) : (
+            <View>
+              <View style={styles.header}>
+                <Text style={styles.title}>Reset Password</Text>
+                <Text style={styles.subtitle}>
+                  Enter your registered college or personal email address to receive password reset instructions.
+                </Text>
+              </View>
+
+              <View style={styles.form}>
+                <Input
+                  label="Registered Email"
+                  placeholder="name@college.edu"
+                  value={email}
+                  onChangeText={(t) => {
+                    setEmail(t);
+                    if (error) setError(null);
+                  }}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  error={error || undefined}
+                  leftIcon={<Ionicons name="mail-outline" size={20} color={Palette.slate400} />}
+                />
+
+                <Button
+                  title="Send Reset Link"
+                  onPress={handleSubmit}
+                  variant="primary"
+                  size="lg"
+                  isLoading={isLoading}
+                  style={styles.submitBtn}
+                />
+              </View>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -127,65 +128,80 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Palette.white,
+    backgroundColor: Palette.slate50,
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: Layout.maxAuthWidth,
+    backgroundColor: Palette.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.xxl,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    ...Shadows.md,
   },
   backButton: {
-    alignSelf: 'flex-start',
-    padding: 6,
-    borderRadius: Radius.sm,
+    width: 38,
+    height: 38,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Palette.slate100,
     marginBottom: Spacing.lg,
+    alignSelf: 'flex-start',
   },
   header: {
     marginBottom: Spacing.xl,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '800',
+    ...Typography.h2,
     color: Palette.slate900,
-    letterSpacing: -0.4,
-    marginBottom: Spacing.xs,
+    marginBottom: 4,
   },
   subtitle: {
+    ...Typography.body,
     fontSize: 14,
     color: Palette.slate600,
     lineHeight: 20,
   },
   form: {
-    marginBottom: Spacing.xl,
+    gap: Spacing.md,
   },
   submitBtn: {
     marginTop: Spacing.sm,
   },
   successBox: {
     alignItems: 'center',
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing.lg,
   },
   successIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: Palette.success50,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Palette.success100,
   },
   successTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    ...Typography.h2,
     color: Palette.slate900,
     marginBottom: Spacing.sm,
   },
   successDesc: {
+    ...Typography.body,
     fontSize: 14,
     color: Palette.slate600,
     textAlign: 'center',
-    lineHeight: 22,
-    maxWidth: 320,
+    lineHeight: 21,
     marginBottom: Spacing.xl,
   },
   boldEmail: {

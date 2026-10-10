@@ -12,10 +12,11 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Palette, Radius, Spacing } from '@/theme';
+import { Palette, Radius, Spacing, Typography, Shadows } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
 import { chatService } from '@/services/chatService';
 import { AppHeader } from '@/components/ui/app-header';
+import { ResponsiveContainer } from '@/components/ui/responsive-container';
 import { Ionicons } from '@expo/vector-icons';
 
 function formatMessageTime(iso: string) {
@@ -46,7 +47,7 @@ export default function ChatScreen() {
     queryKey: ['chat_messages', id],
     queryFn: () => chatService.getMessages(id as string),
     enabled: !!id,
-    refetchInterval: 4000, // 4-second polling for updates
+    refetchInterval: 4000,
   });
 
   const sendMutation = useMutation({
@@ -71,101 +72,109 @@ export default function ChatScreen() {
     >
       <AppHeader
         title={conversation?.participant.fullName || 'Peer Chat'}
-        subtitle={conversation?.taskTitle || 'Task Collaboration'}
+        subtitle={conversation?.taskTitle || 'Task Coordination'}
         canGoBack
       />
 
-      <FlatList
-        data={messages || []}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.messagesContainer, { paddingBottom: Spacing.lg }]}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => {
-          const isMine = item.senderId === user?.id;
-          return (
-            <View
-              style={[
-                styles.bubbleWrapper,
-                isMine ? styles.myBubbleWrapper : styles.theirBubbleWrapper,
-              ]}
-            >
-              <View
-                style={[
-                  styles.bubble,
-                  isMine ? styles.myBubble : styles.theirBubble,
-                ]}
-              >
-                {!isMine && <Text style={styles.senderName}>{item.senderName}</Text>}
-                <Text style={[styles.bubbleText, isMine && styles.myBubbleText]}>
-                  {item.text}
-                </Text>
-                <View style={styles.timeStatusRow}>
-                  <Text style={[styles.timeText, isMine && styles.myTimeText]}>
-                    {formatMessageTime(item.timestamp)}
-                  </Text>
-                  {isMine && (
-                    <Ionicons
-                      name="checkmark-done"
-                      size={14}
-                      color={Palette.primary200}
-                      style={styles.readCheck}
-                    />
-                  )}
+      <ResponsiveContainer maxWidth={840} style={{ flex: 1 }}>
+        <View style={styles.chatWrapper}>
+          <FlatList
+            data={messages || []}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[styles.messagesContainer, { paddingBottom: Spacing.lg }]}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => {
+              const isMine = item.senderId === user?.id;
+              return (
+                <View
+                  style={[
+                    styles.bubbleWrapper,
+                    isMine ? styles.myBubbleWrapper : styles.theirBubbleWrapper,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.bubble,
+                      isMine ? styles.myBubble : styles.theirBubble,
+                    ]}
+                  >
+                    {!isMine && <Text style={styles.senderName}>{item.senderName}</Text>}
+                    <Text style={[styles.bubbleText, isMine && styles.myBubbleText]}>
+                      {item.text}
+                    </Text>
+                    <View style={styles.timeStatusRow}>
+                      <Text style={[styles.timeText, isMine && styles.myTimeText]}>
+                        {formatMessageTime(item.timestamp)}
+                      </Text>
+                      {isMine && (
+                        <Ionicons
+                          name="checkmark-done"
+                          size={14}
+                          color={Palette.primary200}
+                          style={styles.readCheck}
+                        />
+                      )}
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          );
-        }}
-        ListEmptyComponent={
-          isLoading ? null : isError ? (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: Palette.danger500 }]}>
-                Unable to load messages. Check your connection or verify chat server status.
-              </Text>
-              <Pressable
-                onPress={() => refetch()}
-                style={({ pressed }) => [styles.retryChatBtn, pressed && { opacity: 0.7 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Retry loading messages"
-              >
-                <Text style={styles.retryChatBtnText}>Retry</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                No messages yet. Say hello and coordinate the academic assistance requirements!
-              </Text>
-            </View>
-          )
-        }
-      />
+              );
+            }}
+            ListEmptyComponent={
+              isLoading ? null : isError ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: Palette.danger500 }]}>
+                    Unable to load messages. Please check your connection.
+                  </Text>
+                  <Pressable
+                    onPress={() => refetch()}
+                    style={styles.retryChatBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Retry loading messages"
+                  >
+                    <Text style={styles.retryChatBtnText}>Retry</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="chatbubbles-outline" size={32} color={Palette.slate300} />
+                  <Text style={styles.emptyText}>
+                    No messages yet. Say hello and coordinate the task details!
+                  </Text>
+                </View>
+              )
+            }
+          />
 
-      {/* Input row */}
-      <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <TextInput
-          placeholder="Type a message..."
-          placeholderTextColor={Palette.slate400}
-          value={inputMessage}
-          onChangeText={setInputMessage}
-          style={styles.textInput}
-          multiline
-        />
-
-        <Pressable
-          onPress={handleSend}
-          disabled={!inputMessage.trim()}
-          style={({ pressed }) => [
-            styles.sendBtn,
-            !inputMessage.trim() && styles.sendBtnDisabled,
-            pressed && styles.sendBtnPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Send message"
-        >
-          <Ionicons name="arrow-up" size={20} color={Palette.white} />
-        </Pressable>
-      </View>
+          {/* Composer */}
+          <View style={[styles.composerContainer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Type an academic message..."
+              placeholderTextColor={Palette.slate400}
+              value={inputMessage}
+              onChangeText={setInputMessage}
+              multiline
+              maxLength={2000}
+            />
+            <Pressable
+              onPress={handleSend}
+              disabled={!inputMessage.trim() || sendMutation.isPending}
+              style={[
+                styles.sendBtn,
+                (!inputMessage.trim() || sendMutation.isPending) && styles.sendBtnDisabled,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Send message"
+            >
+              <Ionicons
+                name="send"
+                size={18}
+                color={!inputMessage.trim() || sendMutation.isPending ? Palette.slate400 : Palette.white}
+              />
+            </Pressable>
+          </View>
+        </View>
+      </ResponsiveContainer>
     </KeyboardAvoidingView>
   );
 }
@@ -175,42 +184,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Palette.slate50,
   },
+  chatWrapper: {
+    flex: 1,
+  },
   messagesContainer: {
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingTop: Spacing.md,
   },
   bubbleWrapper: {
-    marginVertical: 4,
-    maxWidth: '82%',
+    marginBottom: Spacing.md,
+    flexDirection: 'row',
   },
   myBubbleWrapper: {
-    alignSelf: 'flex-end',
+    justifyContent: 'flex-end',
   },
   theirBubbleWrapper: {
-    alignSelf: 'flex-start',
+    justifyContent: 'flex-start',
   },
   bubble: {
+    maxWidth: '78%',
+    borderRadius: Radius.lg,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: Radius.lg,
+    ...Shadows.sm,
   },
   myBubble: {
     backgroundColor: Palette.primary600,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: Radius.xs,
   },
   theirBubble: {
     backgroundColor: Palette.white,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: Radius.xs,
     borderWidth: 1,
     borderColor: Palette.slate200,
   },
   senderName: {
-    fontSize: 11,
+    ...Typography.tiny,
     fontWeight: '700',
     color: Palette.primary700,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   bubbleText: {
+    ...Typography.body,
     fontSize: 14,
     color: Palette.slate900,
     lineHeight: 20,
@@ -223,9 +238,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     marginTop: 4,
-    gap: 3,
+    gap: 4,
   },
   timeText: {
+    ...Typography.tiny,
     fontSize: 10,
     color: Palette.slate400,
   },
@@ -236,18 +252,31 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   emptyContainer: {
-    padding: Spacing.xxl,
+    paddingTop: 80,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   emptyText: {
-    fontSize: 13,
+    ...Typography.body,
+    fontSize: 14,
     color: Palette.slate500,
     textAlign: 'center',
-    lineHeight: 19,
   },
-  inputRow: {
+  retryChatBtn: {
+    marginTop: Spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: Palette.primary50,
+    borderRadius: Radius.md,
+  },
+  retryChatBtnText: {
+    ...Typography.captionBold,
+    color: Palette.primary700,
+  },
+  composerContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: Palette.white,
     paddingHorizontal: Spacing.md,
     paddingTop: 10,
@@ -258,38 +287,22 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     backgroundColor: Palette.slate100,
-    borderRadius: Radius.full,
-    paddingHorizontal: 16,
+    borderRadius: Radius.lg,
+    paddingHorizontal: 14,
     paddingVertical: 10,
+    maxHeight: 100,
     fontSize: 14,
     color: Palette.slate900,
-    maxHeight: 100,
   },
   sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: Palette.primary600,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   sendBtnDisabled: {
-    backgroundColor: Palette.slate300,
-  },
-  sendBtnPressed: {
-    opacity: 0.85,
-  },
-  retryChatBtn: {
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: Palette.primary600,
-  },
-  retryChatBtnText: {
-    color: Palette.primary600,
-    fontSize: 13,
-    fontWeight: '700',
+    backgroundColor: Palette.slate200,
   },
 });

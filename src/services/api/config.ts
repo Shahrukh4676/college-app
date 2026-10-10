@@ -29,7 +29,10 @@ export const API_CONFIG = {
     if (runtimeMockOverride !== null) {
       return runtimeMockOverride;
     }
-    return process.env.EXPO_PUBLIC_USE_MOCK_API === 'true';
+    if (process.env.EXPO_PUBLIC_USE_MOCK_API === 'false') {
+      return false;
+    }
+    return true;
   },
 
   TIMEOUT_MS: 12000,
