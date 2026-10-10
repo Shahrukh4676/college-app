@@ -1,98 +1,252 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+} from 'react-native-reanimated';
+import { Palette, Radius, Spacing } from '@/theme';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function WelcomeScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isAuthenticated, isMockMode, isLoading } = useAuth();
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  // If already logged in, allow instant direct entry
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)/home');
+    } else {
+      router.push('/(auth)/register');
+    }
+  };
+
+  const handleLogin = () => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)/home');
+    } else {
+      router.push('/(auth)/login');
+    }
+  };
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={FadeInDown.duration(600)} style={styles.headerSection}>
+          <View style={styles.badgeWrapper}>
+            <View style={styles.badge}>
+              <Ionicons name="school" size={14} color={Palette.primary600} />
+              <Text style={styles.badgeText}>Campus Skill Network</Text>
+            </View>
+            {isMockMode && (
+              <View style={styles.mockBadge}>
+                <Text style={styles.mockBadgeText}>DEV MOCK MODE</Text>
+              </View>
+            )}
+          </View>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+          <Text style={styles.brandTitle}>Student Marketplace</Text>
+          <Text style={styles.subtitle}>
+            Empowering students to exchange academic skills, collaborate on labs, and earn ethically.
+          </Text>
+        </Animated.View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <Animated.View entering={FadeInDown.delay(150).duration(600)} style={styles.featuresContainer}>
+          <View style={styles.featureCard}>
+            <View style={[styles.iconCircle, { backgroundColor: Palette.primary50 }]}>
+              <Ionicons name="shield-checkmark" size={22} color={Palette.primary600} />
+            </View>
+            <View style={styles.featureTextCol}>
+              <Text style={styles.featureTitle}>Verified Campus Peers</Text>
+              <Text style={styles.featureDesc}>
+                Connect exclusively with verified university students using official institutional domains.
+              </Text>
+            </View>
+          </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+          <View style={styles.featureCard}>
+            <View style={[styles.iconCircle, { backgroundColor: Palette.success50 }]}>
+              <Ionicons name="wallet-outline" size={22} color={Palette.success500} />
+            </View>
+            <View style={styles.featureTextCol}>
+              <Text style={styles.featureTitle}>Transparent Escrow</Text>
+              <Text style={styles.featureDesc}>
+                Payments remain safely in escrow until you verify the completed academic assistance.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.featureCard}>
+            <View style={[styles.iconCircle, { backgroundColor: Palette.purple50 }]}>
+              <Ionicons name="sparkles-outline" size={22} color={Palette.purple500} />
+            </View>
+            <View style={styles.featureTextCol}>
+              <Text style={styles.featureTitle}>Skill Growth & Earnings</Text>
+              <Text style={styles.featureDesc}>
+                Monetize your expertise in coding, statistics, writing, and presentation design.
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+      </ScrollView>
+
+      <Animated.View entering={FadeInUp.delay(300).duration(500)} style={styles.actionSection}>
+        <Button
+          title={isAuthenticated ? 'Continue to Marketplace' : 'Create Student Account'}
+          onPress={handleGetStarted}
+          variant="primary"
+          size="lg"
+          isLoading={isLoading}
+        />
+
+        <Button
+          title={isAuthenticated ? 'Switch Account / Log In' : 'Sign In with Existing Account'}
+          onPress={handleLogin}
+          variant="outline"
+          size="md"
+          style={styles.signInBtn}
+        />
+
+        {!isAuthenticated && (
+          <Button
+            title="Browse Marketplace as Guest"
+            onPress={() => router.push('/(tabs)/tasks')}
+            variant="ghost"
+            size="sm"
+            style={styles.guestBtn}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        )}
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <Text style={styles.integrityDisclaimer}>
+          Committed to academic integrity. Strict prohibition against examination fraud.
+        </Text>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: Palette.white,
+    justifyContent: 'space-between',
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: Spacing.xxl,
+  },
+  badgeWrapper: {
     flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    gap: 8,
+    marginBottom: Spacing.md,
   },
-  heroSection: {
+  badge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    backgroundColor: Palette.primary50,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: Radius.full,
+    gap: 6,
   },
-  title: {
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Palette.primary700,
+  },
+  mockBadge: {
+    backgroundColor: Palette.warning50,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Palette.warning500,
+  },
+  mockBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Palette.warning700,
+  },
+  brandTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: Palette.slate900,
     textAlign: 'center',
+    letterSpacing: -0.6,
+    marginBottom: Spacing.sm,
   },
-  code: {
-    textTransform: 'uppercase',
+  subtitle: {
+    fontSize: 15,
+    color: Palette.slate600,
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: 320,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  featuresContainer: {
+    gap: Spacing.md,
+  },
+  featureCard: {
+    flexDirection: 'row',
+    padding: Spacing.lg,
+    backgroundColor: Palette.slate50,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Palette.slate200,
+    alignItems: 'flex-start',
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  featureTextCol: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Palette.slate900,
+    marginBottom: 4,
+  },
+  featureDesc: {
+    fontSize: 13,
+    color: Palette.slate600,
+    lineHeight: 18,
+  },
+  actionSection: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Palette.slate100,
+    backgroundColor: Palette.white,
+  },
+  signInBtn: {
+    marginTop: Spacing.sm,
+  },
+  guestBtn: {
+    marginTop: Spacing.xs,
+  },
+  integrityDisclaimer: {
+    fontSize: 11,
+    color: Palette.slate400,
+    textAlign: 'center',
+    marginTop: Spacing.md,
+    lineHeight: 15,
   },
 });
